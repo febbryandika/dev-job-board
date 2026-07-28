@@ -10,6 +10,9 @@ const baseURL = 'http://localhost:3000'
 
 export default defineConfig({
   testDir: './e2e',
+  // Clears accounts left behind by previous runs, so a repeated run starts from
+  // the same state as the first one.
+  globalSetup: './e2e/global-setup.ts',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
