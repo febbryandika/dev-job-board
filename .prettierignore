@@ -5,3 +5,4 @@ drizzle/
 playwright-report/
 test-results/
 src/components/ui/
+src/db/auth-schema.ts
