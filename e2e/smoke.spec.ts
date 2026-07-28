@@ -8,5 +8,5 @@ test('the public shell renders', async ({ page }) => {
 
   await expect(page).toHaveTitle('Dev Job Board')
   await expect(page.getByRole('navigation', { name: 'Main' })).toBeVisible()
-  await expect(page.getByRole('heading', { level: 1, name: 'Dev Job Board' })).toBeVisible()
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('Developer jobs in Japan')
 })
