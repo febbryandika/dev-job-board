@@ -4,10 +4,10 @@ A developer job board for the Japanese market: employers post listings, an admin
 approves them, candidates apply. Public pages are server-rendered for SEO;
 everything else is auth-gated CRUD.
 
-> **Status: Phase 2 — authentication and role-based access.** Sign-up, login,
-> logout, the role guard, and the dashboard 403 are in place. The job, moderation,
-> and application surfaces land in later phases; those route files are stubs
-> marked with `TODO(phase-N)`.
+> **Status: Phase 4 — public job browsing plus the job detail page and SEO.**
+> The public list, detail page, `JobPosting` JSON-LD, sitemap and robots are in
+> place alongside auth. Employer posting, moderation, and applications land in
+> later phases; those route files are stubs marked with `TODO(phase-N)`.
 
 ## Stack
 

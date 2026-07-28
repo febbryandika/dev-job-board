@@ -1,4 +1,10 @@
+import { existsSync } from 'node:fs'
+
 import { defineConfig, devices } from '@playwright/test'
+
+// Specs that need to pick a job by status query Postgres directly, so they
+// need DATABASE_URL. Node's built-in loader avoids adding dotenv.
+if (existsSync('.env')) process.loadEnvFile('.env')
 
 const baseURL = 'http://localhost:3000'
 
