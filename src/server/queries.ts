@@ -1,7 +1,8 @@
-import { and, count, desc, eq } from 'drizzle-orm'
+import { and, asc, count, desc, eq } from 'drizzle-orm'
 import { cache } from 'react'
 
 import { db } from '@/db'
+import { user } from '@/db/auth-schema'
 import { applications, jobs } from '@/db/schema'
 import { PAGE_SIZE, type JobSearchParams } from '@/lib/validation'
 import { publicJobsWhere } from '@/server/predicates'
@@ -81,6 +82,27 @@ export const getMyJob = cache(async (id: string, employerId: string) => {
 
   return job
 })
+
+/**
+ * The moderation queue: every `pending` listing, **oldest first**, so the queue
+ * is a genuine FIFO and nothing starves at the bottom. SPEC §3.5.
+ *
+ * The employer join is part of the same query — the admin is judging whether a
+ * listing is legitimate, and one lookup per row would be the N+1 SPEC §5 warns
+ * about.
+ */
+export async function listPendingJobs() {
+  return db
+    .select({
+      job: jobs,
+      employerName: user.name,
+      employerEmail: user.email,
+    })
+    .from(jobs)
+    .leftJoin(user, eq(user.id, jobs.employerId))
+    .where(eq(jobs.status, 'pending'))
+    .orderBy(asc(jobs.createdAt))
+}
 
 /** Only the two columns the sitemap needs — no `SELECT *` for a URL list. */
 export async function listApprovedJobsForSitemap() {

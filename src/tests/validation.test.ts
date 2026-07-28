@@ -5,6 +5,7 @@ import {
   jobInputSchema,
   MAX_TAGS,
   MAX_TAG_LENGTH,
+  MIN_REJECTION_NOTE,
   rejectionSchema,
 } from '@/lib/validation'
 
@@ -150,5 +151,28 @@ describe('rejectionSchema', () => {
   it('requires a non-empty note', () => {
     expect(rejectionSchema.safeParse({ note: '   ' }).success).toBe(false)
     expect(rejectionSchema.safeParse({ note: 'Salary range is missing.' }).success).toBe(true)
+  })
+
+  // The employer only ever sees this note — it is the whole feedback loop, so
+  // "no" must not be a valid rejection reason.
+  it(`rejects a note under ${MIN_REJECTION_NOTE} characters`, () => {
+    const result = rejectionSchema.safeParse({ note: 'x'.repeat(MIN_REJECTION_NOTE - 1) })
+
+    expect(result.success).toBe(false)
+    expect(result.error?.flatten().fieldErrors.note?.[0]).toContain(String(MIN_REJECTION_NOTE))
+  })
+
+  it(`accepts a note of exactly ${MIN_REJECTION_NOTE} characters`, () => {
+    expect(rejectionSchema.safeParse({ note: 'x'.repeat(MIN_REJECTION_NOTE) }).success).toBe(true)
+  })
+
+  // Trimming happens before the length check, so spaces cannot pad a note to
+  // the minimum.
+  it('does not let whitespace pad a note to the minimum', () => {
+    expect(rejectionSchema.safeParse({ note: `  no${' '.repeat(20)}` }).success).toBe(false)
+  })
+
+  it('rejects a note over 1000 characters', () => {
+    expect(rejectionSchema.safeParse({ note: 'x'.repeat(1001) }).success).toBe(false)
   })
 })

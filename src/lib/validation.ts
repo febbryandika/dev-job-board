@@ -113,11 +113,15 @@ export const applicationInputSchema = z.object({
 
 export type ApplicationInput = z.infer<typeof applicationInputSchema>
 
+/** Long enough that "no" doesn't pass. The employer sees this note on their
+ *  edit page — it is the entire feedback loop back to them. SPEC §3.5. */
+export const MIN_REJECTION_NOTE = 10
+
 export const rejectionSchema = z.object({
   note: z
     .string()
     .trim()
-    .min(1, 'A rejection note is required')
+    .min(MIN_REJECTION_NOTE, `Explain the problem in at least ${MIN_REJECTION_NOTE} characters`)
     .max(1000, 'Keep the note under 1000 characters'),
 })
 
