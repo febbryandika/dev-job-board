@@ -4,9 +4,57 @@ import { z } from 'zod'
 // Actions return `error: parsed.error.flatten()`, so every message here is what
 // renders under the field. SPEC §5, §6.1.
 
+/**
+ * What every Server Action returns. `error` is the Zod `flatten()` shape, so
+ * failures that are not validation failures (bad credentials, a taken email)
+ * use the same envelope and the forms need exactly one error renderer.
+ * Thrown errors are never control flow. SPEC §5.
+ */
+export type ActionError = {
+  formErrors: string[]
+  fieldErrors: Record<string, string[] | undefined>
+}
+
+export type ActionResult<T = unknown> = { ok: true; data?: T } | { ok: false; error: ActionError }
+
+/** Build the `ActionResult` envelope for a failure that Zod did not produce. */
+export function formError(message: string, field?: string): ActionResult<never> {
+  return {
+    ok: false,
+    error: field ? { formErrors: [], fieldErrors: { [field]: [message] } } : { formErrors: [message], fieldErrors: {} },
+  }
+}
+
 export const LOCATION_TYPES = ['remote', 'hybrid', 'onsite'] as const
 export const ROLE_TYPES = ['fulltime', 'parttime', 'contract'] as const
 export const JOB_STATUSES = ['pending', 'approved', 'rejected', 'closed'] as const
+
+/**
+ * Roles a person can pick for themselves. `admin` is absent on purpose: it is
+ * DB-assigned only (SPEC §3.1), so a crafted `role: 'admin'` payload fails
+ * validation before it reaches the database — a second lock behind the
+ * `input: false` on the Better Auth user field.
+ */
+export const SIGNUP_ROLES = ['candidate', 'employer'] as const
+
+export const registerSchema = z.object({
+  name: z.string().trim().min(1, 'Name is required').max(80),
+  email: z.email('Enter a valid email address').max(254),
+  password: z
+    .string()
+    .min(8, 'Password must be at least 8 characters')
+    .max(128, 'Password is too long'),
+  role: z.enum(SIGNUP_ROLES, { message: 'Choose whether you are hiring or job hunting' }),
+})
+
+export type RegisterInput = z.infer<typeof registerSchema>
+
+export const loginSchema = z.object({
+  email: z.email('Enter a valid email address').max(254),
+  password: z.string().min(1, 'Password is required').max(128),
+})
+
+export type LoginInput = z.infer<typeof loginSchema>
 
 export const MAX_TAGS = 8
 export const MAX_TAG_LENGTH = 24
