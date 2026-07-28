@@ -4,9 +4,10 @@ A developer job board for the Japanese market: employers post listings, an admin
 approves them, candidates apply. Public pages are server-rendered for SEO;
 everything else is auth-gated CRUD.
 
-> **Status: Phase 1 — database schema, migrations, and seed data.** The tooling,
-> schema, and demo data are in place. Auth pages and every feature surface land
-> in later phases; route files are stubs marked with `TODO(phase-N)`.
+> **Status: Phase 2 — authentication and role-based access.** Sign-up, login,
+> logout, the role guard, and the dashboard 403 are in place. The job, moderation,
+> and application surfaces land in later phases; those route files are stubs
+> marked with `TODO(phase-N)`.
 
 ## Stack
 
@@ -46,6 +47,26 @@ hand is touched. It loads 20 listings across all four statuses (12 approved,
 4 pending, 2 rejected, 2 closed) so the moderation queue and the
 rejected → resubmit path are both non-empty on first load.
 
+## Roles
+
+`candidate` and `employer` are chosen at sign-up. **`admin` is never
+self-service** — the role field is `input: false` on the Better Auth user, so it
+cannot be set from a client payload, and the sign-up schema only accepts the
+other two. Promote someone by hand in the database:
+
+```sql
+UPDATE "user" SET role = 'admin' WHERE email = 'you@example.com';
+```
+
+Against the local container:
+
+```bash
+docker exec dev-job-board-postgres psql -U postgres -d dev_job_board -c "UPDATE \"user\" SET role = 'admin' WHERE email = 'you@example.com';"
+```
+
+The seeded `admin@demo.dev` already has the role, so this is only needed for
+accounts you register yourself.
+
 ## Scripts
 
 | Script | What it does |
@@ -65,5 +86,9 @@ Playwright needs its browser once per machine:
 ```bash
 pnpm exec playwright install chromium
 ```
+
+The E2E suite signs users in, so **Postgres must be running** (`docker compose up -d`)
+and the database migrated and seeded. Unit tests need neither — they only cover
+pure functions.
 
 Migrations are **generated, committed, and applied** — never `drizzle-kit push`.

@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import Link from 'next/link'
 
+import { SiteNav } from '@/components/site-nav'
 import { Toaster } from '@/components/ui/sonner'
 
 import './globals.css'
@@ -45,18 +46,7 @@ export default function RootLayout({
             <Link href="/" className="font-semibold tracking-tight">
               Dev Job Board
             </Link>
-            <ul className="flex items-center gap-4 text-sm">
-              <li>
-                <Link href="/login" className="hover:underline">
-                  Log in
-                </Link>
-              </li>
-              <li>
-                <Link href="/register" className="hover:underline">
-                  Sign up
-                </Link>
-              </li>
-            </ul>
+            <SiteNav />
           </nav>
         </header>
 

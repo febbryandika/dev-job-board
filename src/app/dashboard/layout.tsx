@@ -1,7 +1,12 @@
-// TODO(phase-3): require a session here and redirect to /login when absent.
-// The layout is a convenience guard only — every Server Action must re-check
-// the role itself (SPEC §3.1). Never treat this file as the authorization
-// boundary.
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+import { requireUser } from '@/lib/session'
+
+/**
+ * Requires a session, nothing more. Role checks belong to the pages below and,
+ * critically, to every Server Action — the layout is convenience, never the
+ * authorization boundary. SPEC §3.1.
+ */
+export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
+  await requireUser()
+
   return children
 }
