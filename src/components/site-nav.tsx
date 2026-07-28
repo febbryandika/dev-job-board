@@ -1,10 +1,25 @@
 'use client'
 
 import Link from 'next/link'
-import { useState } from 'react'
+import { useState, useSyncExternalStore } from 'react'
 
 import { Button } from '@/components/ui/button'
 import { authClient } from '@/lib/auth-client'
+
+const noopSubscribe = () => () => {}
+
+/**
+ * `false` while server-rendering and on the first client render, `true`
+ * thereafter — `useSyncExternalStore`'s server snapshot exists for exactly
+ * this, so no state is set from an effect.
+ */
+function useIsHydrated(): boolean {
+  return useSyncExternalStore(
+    noopSubscribe,
+    () => true,
+    () => false
+  )
+}
 
 /**
  * A client island on purpose. Reading the session in the root layout would call
@@ -15,6 +30,8 @@ export function SiteNav() {
   const { data: session, isPending } = authClient.useSession()
   const [signingOut, setSigningOut] = useState(false)
 
+  const mounted = useIsHydrated()
+
   async function signOut() {
     setSigningOut(true)
     await authClient.signOut()
@@ -24,7 +41,12 @@ export function SiteNav() {
     window.location.assign('/')
   }
 
-  if (isPending) {
+  // The session store is browser-only and can already hold a session on the
+  // client's very first render, while the server — which has no store — always
+  // renders the placeholder. Rendering the placeholder until after hydration
+  // makes the server HTML and the first client render identical by
+  // construction; without it React discards and rebuilds this subtree.
+  if (!mounted || isPending) {
     // Reserve the row height so the header doesn't jump once the session lands.
     return <div className="h-8" aria-hidden />
   }

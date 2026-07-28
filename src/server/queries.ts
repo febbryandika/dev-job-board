@@ -2,7 +2,7 @@ import { and, count, desc, eq } from 'drizzle-orm'
 import { cache } from 'react'
 
 import { db } from '@/db'
-import { jobs } from '@/db/schema'
+import { applications, jobs } from '@/db/schema'
 import { PAGE_SIZE, type JobSearchParams } from '@/lib/validation'
 import { publicJobsWhere } from '@/server/predicates'
 
@@ -46,6 +46,37 @@ export const getPublicJob = cache(async (id: string) => {
     .select()
     .from(jobs)
     .where(and(eq(jobs.id, id), eq(jobs.status, 'approved')))
+    .limit(1)
+
+  return job
+})
+
+/**
+ * An employer's own listings **with their application counts in one round
+ * trip** — a LEFT JOIN and a GROUP BY, never a count query per row. SPEC §5.
+ *
+ * The employer id is a predicate here, not a filter applied afterwards.
+ */
+export async function listMyJobs(employerId: string) {
+  return db
+    .select({ job: jobs, applicationCount: count(applications.id) })
+    .from(jobs)
+    .leftJoin(applications, eq(applications.jobId, jobs.id))
+    .where(eq(jobs.employerId, employerId))
+    .groupBy(jobs.id)
+    .orderBy(desc(jobs.createdAt))
+}
+
+/**
+ * One of the employer's own listings, for the edit page. Ownership is in the
+ * WHERE clause, so another employer's id simply returns nothing — the caller
+ * cannot forget to check. SPEC §9.
+ */
+export const getMyJob = cache(async (id: string, employerId: string) => {
+  const [job] = await db
+    .select()
+    .from(jobs)
+    .where(and(eq(jobs.id, id), eq(jobs.employerId, employerId)))
     .limit(1)
 
   return job
