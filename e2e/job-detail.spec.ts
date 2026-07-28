@@ -1,19 +1,16 @@
 import { expect, test } from '@playwright/test'
-import { Pool } from 'pg'
+
+import { query } from './db'
 
 /**
  * Job IDs are cuid2, so they can't be hardcoded. These specs pick a real row
  * per status straight from the database — the only way to prove a *pending*
  * listing 404s is to hold its actual ID.
  */
-const pool = new Pool({ connectionString: process.env.DATABASE_URL })
 
-test.afterAll(async () => {
-  await pool.end()
-})
 
 async function jobIdWithStatus(status: string): Promise<string> {
-  const { rows } = await pool.query<{ id: string; title: string }>(
+  const { rows } = await query<{ id: string; title: string }>(
     'select id, title from jobs where status = $1 limit 1',
     [status]
   )
@@ -23,7 +20,7 @@ async function jobIdWithStatus(status: string): Promise<string> {
 }
 
 test('an approved listing renders its content', async ({ page }) => {
-  const { rows } = await pool.query<{ id: string; title: string; company: string }>(
+  const { rows } = await query<{ id: string; title: string; company: string }>(
     "select id, title, company from jobs where status = 'approved' and salary_min is not null limit 1"
   )
   const job = rows[0]!
@@ -61,7 +58,7 @@ test('the page renders fully with JavaScript disabled', async ({ browser }) => {
   const context = await browser.newContext({ javaScriptEnabled: false })
   const page = await context.newPage()
 
-  const { rows } = await pool.query<{ id: string; title: string; company: string }>(
+  const { rows } = await query<{ id: string; title: string; company: string }>(
     "select id, title, company from jobs where status = 'approved' and salary_min is not null limit 1"
   )
   const job = rows[0]!
@@ -93,7 +90,7 @@ test('the detail page carries valid JobPosting JSON-LD', async ({ page }) => {
 })
 
 test('metadata comes from the row', async ({ page }) => {
-  const { rows } = await pool.query<{ id: string; title: string; company: string }>(
+  const { rows } = await query<{ id: string; title: string; company: string }>(
     "select id, title, company from jobs where status = 'approved' limit 1"
   )
   const job = rows[0]!
@@ -114,11 +111,16 @@ test('the sitemap lists every approved job and nothing else', async ({ request }
   expect(response.status()).toBe(200)
   const xml = await response.text()
 
-  const { rows: approved } = await pool.query<{ id: string }>(
-    "select id from jobs where status = 'approved'"
+  // Restricted to the seeded rows. The sitemap is ISR-cached for 60s, and
+  // employer.spec.ts creates and closes listings in parallel, so comparing
+  // against *every* current row would race the cache rather than test anything.
+  const SEEDED = "created_at < now() - interval '1 hour'"
+
+  const { rows: approved } = await query<{ id: string }>(
+    `select id from jobs where status = 'approved' and ${SEEDED}`
   )
-  const { rows: hidden } = await pool.query<{ id: string }>(
-    "select id from jobs where status <> 'approved'"
+  const { rows: hidden } = await query<{ id: string }>(
+    `select id from jobs where status <> 'approved' and ${SEEDED}`
   )
 
   expect(approved.length).toBeGreaterThan(0)

@@ -2,7 +2,7 @@
 
 import { useActionState } from 'react'
 
-import { fieldErrors, FieldError, FormError } from '@/app/(auth)/field-error'
+import { fieldErrors, FieldError, FormError } from '@/components/form-errors'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import type { ActionResult } from '@/lib/validation'
