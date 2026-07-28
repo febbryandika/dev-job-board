@@ -56,6 +56,25 @@ export const loginSchema = z.object({
 
 export type LoginInput = z.infer<typeof loginSchema>
 
+/** Page size for the public list. SPEC §3.3. */
+export const PAGE_SIZE = 20
+
+/**
+ * Parses the public list's `searchParams`.
+ *
+ * `.catch()` on every field rather than one big fallback: a URL like
+ * `?q=Go&page=abc` keeps the search term and only resets the bad page. A
+ * whole-object fallback would silently throw the valid half away.
+ */
+export const jobSearchParamsSchema = z.object({
+  q: z.string().trim().min(1).max(100).optional().catch(undefined),
+  locationType: z.enum(LOCATION_TYPES).optional().catch(undefined),
+  roleType: z.enum(ROLE_TYPES).optional().catch(undefined),
+  page: z.coerce.number().int().min(1).max(10_000).catch(1),
+})
+
+export type JobSearchParams = z.infer<typeof jobSearchParamsSchema>
+
 export const MAX_TAGS = 8
 export const MAX_TAG_LENGTH = 24
 
