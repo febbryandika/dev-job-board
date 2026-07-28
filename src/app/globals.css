@@ -128,3 +128,54 @@
     @apply font-sans;
   }
 }
+/*
+ * Job descriptions are sanitized HTML from src/lib/markdown.ts, so Tailwind's
+ * utility classes can't be applied to the individual elements. A small scoped
+ * block here is enough — the allowlist in that module is exactly this set of
+ * tags, so nothing can appear that isn't styled below.
+ */
+@layer components {
+  .job-description h2 {
+    @apply mt-6 mb-2 text-xl font-semibold tracking-tight;
+  }
+  .job-description h3 {
+    @apply mt-5 mb-2 text-lg font-semibold tracking-tight;
+  }
+  .job-description h4 {
+    @apply mt-4 mb-2 text-base font-semibold;
+  }
+  .job-description p {
+    @apply my-3;
+  }
+  .job-description ul {
+    @apply my-3 list-disc space-y-1 pl-6;
+  }
+  .job-description ol {
+    @apply my-3 list-decimal space-y-1 pl-6;
+  }
+  .job-description a {
+    @apply underline underline-offset-2;
+  }
+  .job-description code {
+    @apply bg-muted rounded px-1 py-0.5 font-mono text-sm;
+  }
+  .job-description pre {
+    @apply bg-muted my-3 overflow-x-auto rounded-md p-3 text-sm;
+  }
+  .job-description pre code {
+    @apply bg-transparent p-0;
+  }
+  .job-description blockquote {
+    @apply border-border text-muted-foreground my-3 border-l-2 pl-4;
+  }
+  .job-description hr {
+    @apply my-6;
+  }
+  .job-description table {
+    @apply my-3 w-full text-sm;
+  }
+  .job-description th,
+  .job-description td {
+    @apply border-border border px-2 py-1 text-left;
+  }
+}
