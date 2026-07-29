@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { formatPostedDate, formatSalaryRange } from '@/lib/format'
 import { buildJobPostingJsonLd, serializeJsonLd } from '@/lib/json-ld'
 import { renderMarkdown, toMetaDescription } from '@/lib/markdown'
+import { absoluteUrl, siteUrl } from '@/lib/site'
 import { getPublicJob, listApprovedJobsForSitemap } from '@/server/queries'
 
 // SPEC §8. This route only depends on `params`, so unlike the filtered list it
@@ -24,10 +25,6 @@ const ROLE_TYPE_LABELS = {
   parttime: 'Part-time',
   contract: 'Contract',
 } as const
-
-function siteUrl() {
-  return process.env.BETTER_AUTH_URL ?? 'http://localhost:3000'
-}
 
 /** Prerender the approved listings; anything new is generated on first request. */
 export async function generateStaticParams() {
@@ -51,7 +48,7 @@ export async function generateMetadata({
   // `%s — Dev Job Board` template completes the title.
   const title = `${job.title} at ${job.company}`
   const description = toMetaDescription(job.description)
-  const url = `${siteUrl()}/jobs/${job.id}`
+  const url = absoluteUrl(`/jobs/${job.id}`)
 
   return {
     title,

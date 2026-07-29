@@ -1,8 +1,8 @@
 import type { MetadataRoute } from 'next'
 
-export default function robots(): MetadataRoute.Robots {
-  const baseUrl = process.env.BETTER_AUTH_URL ?? 'http://localhost:3000'
+import { absoluteUrl } from '@/lib/site'
 
+export default function robots(): MetadataRoute.Robots {
   return {
     rules: {
       userAgent: '*',
@@ -11,6 +11,6 @@ export default function robots(): MetadataRoute.Robots {
       // session-gated, and /api/auth is Better Auth's handler.
       disallow: ['/dashboard/', '/api/', '/login', '/register'],
     },
-    sitemap: `${baseUrl}/sitemap.xml`,
+    sitemap: absoluteUrl('/sitemap.xml'),
   }
 }

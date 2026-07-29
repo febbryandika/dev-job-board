@@ -156,6 +156,21 @@ export async function hasApplied(jobId: string, applicantId: string) {
   return row !== undefined
 }
 
+/**
+ * Who to notify about a listing, and what to call it. Used only for the
+ * transactional emails, after the write that triggered them has committed.
+ */
+export async function getJobNotificationTarget(jobId: string) {
+  const [row] = await db
+    .select({ jobTitle: jobs.title, employerEmail: user.email })
+    .from(jobs)
+    .innerJoin(user, eq(user.id, jobs.employerId))
+    .where(eq(jobs.id, jobId))
+    .limit(1)
+
+  return row
+}
+
 /** Only the two columns the sitemap needs — no `SELECT *` for a URL list. */
 export async function listApprovedJobsForSitemap() {
   return db

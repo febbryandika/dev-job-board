@@ -4,6 +4,7 @@ import Link from 'next/link'
 
 import { SiteNav } from '@/components/site-nav'
 import { Toaster } from '@/components/ui/sonner'
+import { siteUrl } from '@/lib/site'
 
 import './globals.css'
 
@@ -17,10 +18,8 @@ const geistMono = Geist_Mono({
   subsets: ['latin'],
 })
 
-const siteUrl = process.env.BETTER_AUTH_URL ?? 'http://localhost:3000'
-
 export const metadata: Metadata = {
-  metadataBase: new URL(siteUrl),
+  metadataBase: new URL(siteUrl()),
   // The template is what per-job metadata plugs into:
   // "{title} at {company}" → "… — Dev Job Board". SPEC §8.
   title: {

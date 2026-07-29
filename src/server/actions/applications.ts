@@ -3,11 +3,14 @@
 import { createId } from '@paralleldrive/cuid2'
 import { and, eq, sql } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
+import { after } from 'next/server'
 
 import { db } from '@/db'
 import { applications, jobs } from '@/db/schema'
+import { newApplicationEmail, sendEmail } from '@/lib/email'
 import { getSessionUser, requireRole } from '@/lib/session'
 import { applicationInputSchema, formError, type ActionResult } from '@/lib/validation'
+import { getJobNotificationTarget } from '@/server/queries'
 
 /** Postgres unique-violation. */
 const UNIQUE_VIOLATION = '23505'
@@ -88,6 +91,20 @@ export async function applyToJob(
 
   revalidatePath('/dashboard/applications')
   revalidatePath('/dashboard/employer')
+
+  // `after` runs once the response is finished, so a slow or failing Resend
+  // call cannot delay the candidate's action — and unlike a floating promise,
+  // the work isn't cut off when the serverless response returns. The row is
+  // already committed; nothing here can undo it. SPEC §3.6.
+  after(async () => {
+    const target = await getJobNotificationTarget(jobId)
+    if (!target) return
+
+    await sendEmail(
+      target.employerEmail,
+      newApplicationEmail({ jobTitle: target.jobTitle, applicantName: user.name })
+    )
+  })
 
   return { ok: true }
 }
