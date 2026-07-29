@@ -19,6 +19,9 @@ export const metadata: Metadata = {
   title: 'My applications',
 }
 
+/** Shared with `loading.tsx`, so the skeleton's columns cannot drift from these. */
+export const APPLICATION_COLUMNS = ['Listing', 'Status', 'Résumé', 'Applied'] as const
+
 /**
  * What the candidate is told about a listing they applied to. `pending` and
  * `rejected` never appear here — an approved listing is the only kind that can
@@ -61,10 +64,9 @@ export default async function MyApplicationsPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Listing</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Résumé</TableHead>
-                <TableHead>Applied</TableHead>
+                {APPLICATION_COLUMNS.map((column) => (
+                  <TableHead key={column}>{column}</TableHead>
+                ))}
               </TableRow>
             </TableHeader>
             <TableBody>

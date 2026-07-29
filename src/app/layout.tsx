@@ -37,6 +37,13 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col">
+        {/* First tab stop on every page, so a keyboard user isn't forced
+            through the whole header before reaching content. Off-screen until
+            focused — see .skip-link in globals.css. */}
+        <a href="#main-content" className="skip-link">
+          Skip to content
+        </a>
+
         <header className="border-b">
           <nav
             aria-label="Main"
@@ -49,7 +56,9 @@ export default function RootLayout({
           </nav>
         </header>
 
-        <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">{children}</main>
+        <main id="main-content" tabIndex={-1} className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">
+          {children}
+        </main>
 
         <footer className="border-t">
           <div className="text-muted-foreground mx-auto w-full max-w-5xl px-4 py-6 text-sm">

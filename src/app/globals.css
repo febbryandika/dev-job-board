@@ -179,3 +179,16 @@
     @apply border-border border px-2 py-1 text-left;
   }
 }
+
+/*
+ * Skip-to-content link. Kept in the accessibility tree and the tab order at all
+ * times — `display: none` would remove it — but out of sight until focused.
+ */
+@layer components {
+  .skip-link {
+    @apply bg-background text-foreground ring-ring absolute left-4 z-50 -translate-y-20 rounded-md border px-4 py-2 text-sm font-medium transition-transform;
+  }
+  .skip-link:focus-visible {
+    @apply translate-y-4 ring-2 outline-none;
+  }
+}

@@ -22,6 +22,9 @@ export const metadata: Metadata = {
   title: 'My listings',
 }
 
+/** Shared with `loading.tsx`, so the skeleton's columns cannot drift from these. */
+export const LISTING_COLUMNS = ['Listing', 'Status', 'Salary', 'Applicants', 'Actions'] as const
+
 // Text on every badge, never colour alone. SPEC §6.1.
 const STATUS_LABELS: Record<JobStatus, string> = {
   pending: 'Pending review',
@@ -74,11 +77,9 @@ export default async function EmployerDashboardPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Listing</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Salary</TableHead>
-                <TableHead className="text-right">Applicants</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                {LISTING_COLUMNS.map((column) => (
+                  <TableHead key={column}>{column}</TableHead>
+                ))}
               </TableRow>
             </TableHeader>
             <TableBody>
