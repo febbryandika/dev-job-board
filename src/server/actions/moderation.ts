@@ -2,12 +2,20 @@
 
 import { and, eq } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
+import { after } from 'next/server'
 
 import { db } from '@/db'
 import { jobs } from '@/db/schema'
+import {
+  jobApprovedEmail,
+  jobRejectedEmail,
+  sendEmail,
+  type EmailMessage,
+} from '@/lib/email'
 import { requireRole } from '@/lib/session'
 import { canTransition } from '@/lib/transitions'
 import { formError, rejectionSchema, type ActionResult } from '@/lib/validation'
+import { getJobNotificationTarget } from '@/server/queries'
 
 /**
  * The approval workflow's two writes. Both: `requireRole('admin')` → Zod →
@@ -41,6 +49,23 @@ function reviewStamp(adminId: string) {
  * **404 is cached**, and approving without clearing it would leave the job
  * unreachable for up to a minute. SPEC §8.
  */
+/**
+ * Tells the employer what was decided. Runs via `after`, so it happens once the
+ * response is finished: a slow or failing Resend call cannot delay the admin's
+ * action, and the decision is already committed regardless. SPEC §3.6.
+ */
+function notifyEmployer(
+  jobId: string,
+  build: (target: { jobTitle: string; employerEmail: string }) => EmailMessage
+) {
+  after(async () => {
+    const target = await getJobNotificationTarget(jobId)
+    if (!target) return
+
+    await sendEmail(target.employerEmail, build(target))
+  })
+}
+
 function revalidatePublicSurfaces(id: string) {
   revalidatePath(`/jobs/${id}`)
   revalidatePath('/')
@@ -69,6 +94,9 @@ export async function approveJob(id: string): Promise<ActionResult> {
   }
 
   revalidatePublicSurfaces(id)
+  notifyEmployer(id, (target) =>
+    jobApprovedEmail({ jobTitle: target.jobTitle, jobId: id })
+  )
 
   return { ok: true }
 }
@@ -107,6 +135,9 @@ export async function rejectJob(
 
   revalidatePath('/dashboard/admin')
   revalidatePath('/dashboard/employer')
+  notifyEmployer(id, (target) =>
+    jobRejectedEmail({ jobTitle: target.jobTitle, jobId: id, note: parsed.data.note })
+  )
 
   return { ok: true }
 }

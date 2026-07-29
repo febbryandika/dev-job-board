@@ -4,10 +4,9 @@ A developer job board for the Japanese market: employers post listings, an admin
 approves them, candidates apply. Public pages are server-rendered for SEO;
 everything else is auth-gated CRUD.
 
-> **Status: Phase 4 — public job browsing plus the job detail page and SEO.**
-> The public list, detail page, `JobPosting` JSON-LD, sitemap and robots are in
-> place alongside auth. Employer posting, moderation, and applications land in
-> later phases; those route files are stubs marked with `TODO(phase-N)`.
+> **Status: Phase 8 — feature-complete.** Browsing, SEO, employer posting,
+> admin moderation, applications and transactional email are all in place.
+> CI, deployment and the README's screenshots/demo GIF are what remain.
 
 ## Stack
 
@@ -80,6 +79,9 @@ accounts you register yourself.
 | `pnpm db:generate` | Generate SQL migrations into `drizzle/` (commit these) |
 | `pnpm db:migrate` | Apply migrations |
 | `pnpm db:seed` | Seed demo data |
+
+Email is optional locally: with `RESEND_API_KEY` unset, messages are logged to
+the console instead of sent, so nothing needs configuring to run the app.
 
 Playwright needs its browser once per machine:
 
