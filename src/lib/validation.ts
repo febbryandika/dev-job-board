@@ -47,14 +47,10 @@ export const registerSchema = z.object({
   role: z.enum(SIGNUP_ROLES, { message: 'Choose whether you are hiring or job hunting' }),
 })
 
-export type RegisterInput = z.infer<typeof registerSchema>
-
 export const loginSchema = z.object({
   email: z.email('Enter a valid email address').max(254),
   password: z.string().min(1, 'Password is required').max(128),
 })
-
-export type LoginInput = z.infer<typeof loginSchema>
 
 /** Page size for the public list. SPEC §3.3. */
 export const PAGE_SIZE = 20
@@ -100,8 +96,6 @@ export const jobInputSchema = z
     path: ['salaryMax'],
   })
 
-export type JobInput = z.infer<typeof jobInputSchema>
-
 export const applicationInputSchema = z.object({
   // https only — an http resume link would leak the candidate's document over
   // the wire, and `javascript:` / `data:` URLs must never reach an href. SPEC §9.
@@ -110,8 +104,6 @@ export const applicationInputSchema = z.object({
     .max(2000, 'Resume URL is too long'),
   coverLetter: z.string().trim().max(5000).optional(),
 })
-
-export type ApplicationInput = z.infer<typeof applicationInputSchema>
 
 /** Long enough that "no" doesn't pass. The employer sees this note on their
  *  edit page — it is the entire feedback loop back to them. SPEC §3.5. */
@@ -124,5 +116,3 @@ export const rejectionSchema = z.object({
     .min(MIN_REJECTION_NOTE, `Explain the problem in at least ${MIN_REJECTION_NOTE} characters`)
     .max(1000, 'Keep the note under 1000 characters'),
 })
-
-export type RejectionInput = z.infer<typeof rejectionSchema>
