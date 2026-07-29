@@ -8,6 +8,9 @@ import {
 } from '@/components/ui/table'
 import type { Application } from '@/db/schema'
 
+/** Shared with the route's `loading.tsx` so the skeleton matches. */
+export const APPLICANT_COLUMNS = ['Applicant', 'Résumé', 'Cover letter', 'Applied'] as const
+
 export type ApplicationRow = {
   application: Application
   applicantName: string | null
@@ -25,10 +28,9 @@ export function ApplicationTable({ rows }: { rows: ApplicationRow[] }) {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Applicant</TableHead>
-            <TableHead>Résumé</TableHead>
-            <TableHead>Cover letter</TableHead>
-            <TableHead>Applied</TableHead>
+            {APPLICANT_COLUMNS.map((column) => (
+              <TableHead key={column}>{column}</TableHead>
+            ))}
           </TableRow>
         </TableHeader>
         <TableBody>

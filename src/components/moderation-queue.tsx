@@ -14,6 +14,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from '@/components/ui/dialog'
 import { Textarea } from '@/components/ui/textarea'
 import type { Job } from '@/db/schema'
@@ -132,25 +133,34 @@ function QueueCard({ item }: { item: PendingItem }) {
           <Button onClick={approve} disabled={approvePending}>
             {approvePending ? 'Approving…' : 'Approve'}
           </Button>
-          <Button variant="outline" onClick={() => setRejecting(true)} disabled={approvePending}>
-            Reject
-          </Button>
+          <RejectDialog
+            job={job}
+            open={rejecting}
+            onOpenChange={setRejecting}
+            disabled={approvePending}
+          />
         </div>
-
-        <RejectDialog job={job} open={rejecting} onOpenChange={setRejecting} />
       </CardContent>
     </Card>
   )
 }
 
+/**
+ * The trigger lives inside the Dialog via `DialogTrigger` rather than beside
+ * it. Without that, Radix has no trigger to hand focus back to when the dialog
+ * closes, and `Esc` dropped the keyboard user on `<body>` — measured, and the
+ * reason this component was restructured.
+ */
 function RejectDialog({
   job,
   open,
   onOpenChange,
+  disabled,
 }: {
   job: Job
   open: boolean
   onOpenChange: (open: boolean) => void
+  disabled?: boolean
 }) {
   const [state, formAction, pending] = useActionState(
     async (prev: ActionResult | null, formData: FormData) => {
@@ -169,6 +179,11 @@ function RejectDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogTrigger asChild>
+        <Button variant="outline" disabled={disabled}>
+          Reject
+        </Button>
+      </DialogTrigger>
       <DialogContent>
         <form action={formAction} className="space-y-4">
           <DialogHeader>

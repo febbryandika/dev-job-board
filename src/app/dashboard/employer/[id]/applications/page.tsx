@@ -10,6 +10,12 @@ export const metadata: Metadata = {
   title: 'Applications',
 }
 
+// Deliberately no `loading.tsx` on this route: it calls `notFound()` when the
+// listing isn't the employer's, and a Suspense boundary would stream the
+// response, sending headers before the 404 is known. Another employer's
+// applicants must stay a real 404, not a soft one. Same reasoning as
+// `/jobs/[id]`.
+
 export default async function JobApplicationsPage({
   params,
 }: {

@@ -1,15 +1,22 @@
+import { execFileSync } from 'node:child_process'
+
 import { Pool } from 'pg'
 
 /**
- * The specs register throwaway accounts under `@example.test` and never tear
- * them down, so across repeated local runs their listings pile up in the
- * moderation queue and the public list. That made later runs slower and
- * eventually flaky — not a product problem, but a suite that isn't
- * reproducible is a suite you stop trusting.
+ * Restores a known database state before every run.
  *
- * Deleting the users cascades to their jobs and applications. `.test` is a
- * reserved TLD, so this can never match a real account, and the seeded demo
- * users are untouched.
+ * Two things drift otherwise, and both made the suite non-reproducible:
+ *
+ * 1. The specs register throwaway `@example.test` accounts and never tear them
+ *    down, so their listings pile up in the moderation queue and public list.
+ * 2. More subtly, the moderation and applications specs **approve and reject
+ *    the seeded `pending` listings**, permanently. After enough runs there are
+ *    none left in the state those specs assume, and tests that passed on a
+ *    fresh database start failing for reasons that have nothing to do with the
+ *    code under test.
+ *
+ * Deleting the accounts cascades to their jobs and applications; reseeding puts
+ * the 20 listings back at 12 approved / 4 pending / 2 rejected / 2 closed.
  */
 export default async function globalSetup() {
   const pool = new Pool({ connectionString: process.env.DATABASE_URL })
@@ -20,4 +27,7 @@ export default async function globalSetup() {
   } finally {
     await pool.end()
   }
+
+  execFileSync('pnpm', ['db:seed'], { stdio: 'pipe' })
+  console.log('[e2e] database reseeded to the baseline')
 }
