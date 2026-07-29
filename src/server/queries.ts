@@ -104,6 +104,58 @@ export async function listPendingJobs() {
     .orderBy(asc(jobs.createdAt))
 }
 
+/**
+ * Applicants for one of the employer's own listings.
+ *
+ * This is the only query in the app that returns a third party's contact
+ * details, so `employerId` is a predicate in the same statement — there is no
+ * code path that can return them unscoped, and forgetting an ownership check at
+ * a call site is not possible. SPEC §9.
+ */
+export async function listJobApplications(jobId: string, employerId: string) {
+  return db
+    .select({
+      application: applications,
+      applicantName: user.name,
+      applicantEmail: user.email,
+    })
+    .from(applications)
+    .innerJoin(jobs, eq(jobs.id, applications.jobId))
+    .leftJoin(user, eq(user.id, applications.applicantId))
+    .where(and(eq(applications.jobId, jobId), eq(jobs.employerId, employerId)))
+    .orderBy(desc(applications.createdAt))
+}
+
+/** A candidate's own applications, with the listing they were sent to. */
+export async function listMyApplications(applicantId: string) {
+  return db
+    .select({
+      application: applications,
+      jobId: jobs.id,
+      jobTitle: jobs.title,
+      jobCompany: jobs.company,
+      jobStatus: jobs.status,
+    })
+    .from(applications)
+    .innerJoin(jobs, eq(jobs.id, applications.jobId))
+    .where(eq(applications.applicantId, applicantId))
+    .orderBy(desc(applications.createdAt))
+}
+
+/**
+ * Whether this candidate already applied. Convenience only — `uq_application`
+ * is what actually guarantees it. SPEC §3.4.
+ */
+export async function hasApplied(jobId: string, applicantId: string) {
+  const [row] = await db
+    .select({ id: applications.id })
+    .from(applications)
+    .where(and(eq(applications.jobId, jobId), eq(applications.applicantId, applicantId)))
+    .limit(1)
+
+  return row !== undefined
+}
+
 /** Only the two columns the sitemap needs — no `SELECT *` for a URL list. */
 export async function listApprovedJobsForSitemap() {
   return db

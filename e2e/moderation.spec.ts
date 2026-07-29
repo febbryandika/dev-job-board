@@ -66,8 +66,17 @@ async function postJob(page: Page, title: string) {
   return rows[0]!.id
 }
 
+/**
+ * Scoped to the queue's own list. A bare `getByRole('listitem')` also matches
+ * Sonner's toasts — which are `<li>` elements containing the job title — so
+ * after an approve it resolved to two nodes and the assertion failed on strict
+ * mode rather than on anything real.
+ */
 function queueCard(page: Page, title: string) {
-  return page.getByRole('listitem').filter({ hasText: title })
+  return page
+    .getByRole('list', { name: 'Pending listings' })
+    .locator('> li')
+    .filter({ hasText: title })
 }
 
 /** `exact: true` because the dialog's own "Reject listing" would also match. */

@@ -10,6 +10,13 @@ const baseURL = 'http://localhost:3000'
 
 export default defineConfig({
   testDir: './e2e',
+  // These are journey tests: several register/sign-out/sign-in cycles each,
+  // against a dev server with workers competing for it. Playwright's 30s
+  // default is tight for that and made long-but-correct tests fail.
+  timeout: 60_000,
+  // Sign-up lands via two redirects (/dashboard → the role's page), so URL and
+  // visibility assertions need more than the 5s default on a loaded dev server.
+  expect: { timeout: 10_000 },
   // Clears accounts left behind by previous runs, so a repeated run starts from
   // the same state as the first one.
   globalSetup: './e2e/global-setup.ts',

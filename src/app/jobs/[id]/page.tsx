@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
+import { ApplyDialog } from '@/components/apply-dialog'
 import { Badge } from '@/components/ui/badge'
 import { formatPostedDate, formatSalaryRange } from '@/lib/format'
 import { buildJobPostingJsonLd, serializeJsonLd } from '@/lib/json-ld'
@@ -106,6 +107,8 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
           <Badge variant="secondary">{ROLE_TYPE_LABELS[job.roleType]}</Badge>
         </li>
       </ul>
+
+      <ApplyDialog jobId={job.id} jobTitle={job.title} />
 
       <dl className="grid grid-cols-1 gap-4 border-y py-4 sm:grid-cols-2">
         <div>
