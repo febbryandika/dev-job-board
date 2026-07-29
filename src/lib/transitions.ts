@@ -37,12 +37,3 @@ export function canTransition(from: JobStatus, to: JobStatus, actorRole: Role): 
 export const EDITABLE_STATUSES = ALLOWED.filter(
   (t) => t.actor === 'employer' && t.to === 'pending'
 ).map((t) => t.from) as readonly JobStatus[]
-
-/**
- * Where an employer's edit leaves the listing: `rejected` resubmits to
- * `pending`, `pending` stays put. Returns undefined when the listing is not
- * editable at all, so the caller has one thing to check.
- */
-export function statusAfterEdit(from: JobStatus): JobStatus | undefined {
-  return canTransition(from, 'pending', 'employer') ? 'pending' : undefined
-}

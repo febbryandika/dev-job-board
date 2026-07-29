@@ -8,8 +8,7 @@ import {
 } from '@/components/ui/table'
 import type { Application } from '@/db/schema'
 
-/** Shared with the route's `loading.tsx` so the skeleton matches. */
-export const APPLICANT_COLUMNS = ['Applicant', 'Résumé', 'Cover letter', 'Applied'] as const
+const APPLICANT_COLUMNS = ['Applicant', 'Résumé', 'Cover letter', 'Applied'] as const
 
 export type ApplicationRow = {
   application: Application

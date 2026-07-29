@@ -143,20 +143,6 @@ export async function listMyApplications(applicantId: string) {
 }
 
 /**
- * Whether this candidate already applied. Convenience only — `uq_application`
- * is what actually guarantees it. SPEC §3.4.
- */
-export async function hasApplied(jobId: string, applicantId: string) {
-  const [row] = await db
-    .select({ id: applications.id })
-    .from(applications)
-    .where(and(eq(applications.jobId, jobId), eq(applications.applicantId, applicantId)))
-    .limit(1)
-
-  return row !== undefined
-}
-
-/**
  * Who to notify about a listing, and what to call it. Used only for the
  * transactional emails, after the write that triggered them has committed.
  */

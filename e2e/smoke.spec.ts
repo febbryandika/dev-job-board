@@ -3,9 +3,8 @@ import { expect, test } from '@playwright/test'
 import { query } from './db'
 import { register } from './fixtures'
 
-// Placeholder until phase 11 replaces it with the real product loop:
-// employer posts → admin approves → job appears publicly → candidate applies.
-// For now this proves the app boots and the shared shell renders.
+// The cheapest possible failure signal: the app boots and the shared shell
+// renders. When this fails, nothing in `loop.spec.ts` is worth reading yet.
 test('the public shell renders', async ({ page }) => {
   await page.goto('/')
 

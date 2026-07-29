@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import type { JobStatus } from '@/db/schema'
 import { ROLES, type Role } from '@/lib/roles'
-import { canTransition, EDITABLE_STATUSES, statusAfterEdit } from '@/lib/transitions'
+import { canTransition, EDITABLE_STATUSES } from '@/lib/transitions'
 import { JOB_STATUSES } from '@/lib/validation'
 
 /**
@@ -115,18 +115,5 @@ describe('EDITABLE_STATUSES', () => {
         canTransition(status, 'pending', 'employer')
       )
     }
-  })
-})
-
-describe('statusAfterEdit', () => {
-  it.each([
-    ['pending', 'pending'],
-    ['rejected', 'pending'],
-  ] as const)('leaves a %s listing as %s', (from, expected) => {
-    expect(statusAfterEdit(from)).toBe(expected)
-  })
-
-  it.each(['approved', 'closed'] as const)('returns undefined for a %s listing', (from) => {
-    expect(statusAfterEdit(from)).toBeUndefined()
   })
 })
