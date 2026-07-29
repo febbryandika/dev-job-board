@@ -23,7 +23,13 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  // One worker, everywhere. This suite is bottlenecked on password hashing:
+  // Better Auth uses scrypt, which is CPU-expensive by design, and nearly every
+  // test registers or signs in. Measured on this machine: 1 worker → 50/51 in
+  // 48s; default parallelism → 41/51 in 35s. The extra workers buy 13 seconds
+  // and cost nine failures, because they starve the session endpoint the whole
+  // UI waits on.
+  workers: 1,
   reporter: process.env.CI ? 'github' : 'list',
   use: {
     baseURL,
@@ -31,7 +37,10 @@ export default defineConfig({
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: {
-    command: 'pnpm dev',
+    // CI serves the production build so the suite exercises what deploys —
+    // the prerendered detail pages and their real 404 statuses, which `pnpm dev`
+    // does not reproduce. Locally `pnpm dev` stays, for the faster feedback loop.
+    command: process.env.CI ? 'pnpm start' : 'pnpm dev',
     url: baseURL,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,

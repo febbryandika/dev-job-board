@@ -1,0 +1,83 @@
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: dev_job_board
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d dev_job_board"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      # The service container is published on the runner's localhost.
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/dev_job_board
+      BETTER_AUTH_SECRET: ci-secret-not-used-outside-ci
+      BETTER_AUTH_URL: http://localhost:3000
+      # No RESEND_API_KEY on purpose: email falls back to console logging, so CI
+      # exercises the three send paths without needing an account or sending mail.
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm lint
+
+      - run: pnpm typecheck
+
+      - run: pnpm test
+
+      # Migrations are generated and committed, never pushed — this applies the
+      # real SQL history against an empty database, which is also the only way
+      # CI would catch a migration that doesn't apply cleanly. SPEC §11.
+      - run: pnpm db:migrate
+
+      # `pnpm build` runs `generateStaticParams`, which queries the database, so
+      # the schema and the seed data have to exist before the build — not after.
+      - run: pnpm db:seed
+
+      - run: pnpm build
+
+      - run: pnpm exec playwright install --with-deps chromium
+
+      # `playwright.config.ts` serves the production build in CI rather than
+      # `pnpm dev`, so this exercises what actually deploys: the prerendered
+      # detail pages and their real 404s.
+      - run: pnpm exec playwright test
+
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7

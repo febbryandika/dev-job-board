@@ -1,12 +1,15 @@
 # Dev Job Board
 
+[![CI](https://github.com/febbryandika/dev-job-board/actions/workflows/ci.yml/badge.svg)](https://github.com/febbryandika/dev-job-board/actions/workflows/ci.yml)
+
 A developer job board for the Japanese market: employers post listings, an admin
 approves them, candidates apply. Public pages are server-rendered for SEO;
 everything else is auth-gated CRUD.
 
-> **Status: Phase 8 — feature-complete.** Browsing, SEO, employer posting,
-> admin moderation, applications and transactional email are all in place.
-> CI, deployment and the README's screenshots/demo GIF are what remain.
+> **Status: Phase 10 — CI.** The product is complete and CI runs lint,
+> typecheck, unit tests, migrations and the Playwright suite against a Postgres
+> service container on every push. Deployment to Neon + Vercel and the README's
+> screenshots/demo GIF are what remain.
 
 ## Stack
 

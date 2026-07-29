@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test'
 
 import { query } from './db'
+import { register } from './fixtures'
 
 // Placeholder until phase 11 replaces it with the real product loop:
 // employer posts → admin approves → job appears publicly → candidate applies.
@@ -27,11 +28,7 @@ test('no hydration mismatch on the shared header', async ({ page }) => {
     }
   })
 
-  await page.goto('/login')
-  await page.getByLabel('Email').fill('employer@demo.dev')
-  await page.getByLabel('Password').fill('demo1234')
-  await page.getByRole('button', { name: 'Log in' }).click()
-  await expect(page).toHaveURL('/dashboard/employer')
+  await register(page, 'employer')
 
   // Signed in is the case that used to break: the store has a session on the
   // client's first render, the server has none. The job detail page is included

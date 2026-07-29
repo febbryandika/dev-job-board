@@ -1,4 +1,4 @@
-import { inArray } from 'drizzle-orm'
+import { inArray, sql } from 'drizzle-orm'
 
 import { db } from '@/db'
 import { user } from '@/db/auth-schema'
@@ -341,9 +341,23 @@ async function createDemoUser(email: string, name: string) {
 async function seed() {
   const emails = DEMO_USERS.map((u) => u.email)
 
-  // Re-runnable: drop the demo users first. Every seeded job and application
-  // hangs off them via ON DELETE CASCADE, so this clears the whole seed set
-  // without touching anything a developer created by hand.
+  // `jobs.reviewed_by` references `user.id` with no ON DELETE rule, so if the
+  // demo admin has reviewed a listing owned by someone else — which happens as
+  // soon as anyone posts a job and it gets moderated — deleting the demo users
+  // fails on that constraint and the seed is no longer re-runnable. Clearing
+  // the reference first is the fix; the listing keeps its status, it just loses
+  // a reviewer that is about to stop existing.
+  await db.execute(
+    sql`update jobs set reviewed_by = null
+        where reviewed_by in (select id from "user" where email in (${sql.join(
+          emails.map((email) => sql`${email}`),
+          sql`, `
+        )}))`
+  )
+
+  // Re-runnable: drop the demo users. Every seeded job and application hangs
+  // off them via ON DELETE CASCADE, so this clears the whole seed set without
+  // touching anything a developer created by hand.
   const removed = await db.delete(user).where(inArray(user.email, emails)).returning({ id: user.id })
   if (removed.length > 0) {
     console.log(`Removed ${removed.length} existing demo user(s) and their data.`)
