@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test'
 
+import { query } from './db'
+
 // Placeholder until phase 11 replaces it with the real product loop:
 // employer posts → admin approves → job appears publicly → candidate applies.
 // For now this proves the app boots and the shared shell renders.
@@ -32,10 +34,19 @@ test('no hydration mismatch on the shared header', async ({ page }) => {
   await expect(page).toHaveURL('/dashboard/employer')
 
   // Signed in is the case that used to break: the store has a session on the
-  // client's first render, the server has none.
-  for (const url of ['/', '/dashboard/employer']) {
-    await page.goto(url, { waitUntil: 'networkidle' })
-    await page.waitForTimeout(800)
+  // client's first render, the server has none. The job detail page is included
+  // because ApplyDialog is a second session-reading island on a *prerendered*
+  // page, where a mismatch is easiest to introduce.
+  const { rows } = await query<{ id: string }>(
+    "select id from jobs where status = 'approved' limit 1"
+  )
+
+  for (const url of ['/', '/dashboard/employer', `/jobs/${rows[0]!.id}`]) {
+    await page.goto(url)
+    // The header's Sign out button only renders after hydration, so waiting on
+    // it is a deterministic signal — `networkidle` is not, and hung here.
+    await expect(page.getByRole('button', { name: 'Sign out' })).toBeVisible()
+    await page.waitForTimeout(600)
   }
 
   expect(hydrationErrors, hydrationErrors.join(' | ')).toEqual([])

@@ -4,12 +4,23 @@ import { redirect } from 'next/navigation'
 import { auth, type SessionUser } from '@/lib/auth'
 import { ForbiddenError, hasRole, type Role } from '@/lib/roles'
 
-export async function requireUser(): Promise<SessionUser> {
+/**
+ * The current user, or `null`. Does **not** redirect — for the places that need
+ * to ask "who is looking?" and behave differently rather than bounce, like the
+ * apply island on the public detail page.
+ */
+export async function getSessionUser(): Promise<SessionUser | null> {
   const session = await auth.api.getSession({ headers: await headers() })
 
-  if (!session) redirect('/login')
+  return session?.user ?? null
+}
 
-  return session.user
+export async function requireUser(): Promise<SessionUser> {
+  const user = await getSessionUser()
+
+  if (!user) redirect('/login')
+
+  return user
 }
 
 /**

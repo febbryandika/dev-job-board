@@ -96,7 +96,18 @@ export default async function EmployerDashboardPage() {
                   <TableCell className="text-sm">
                     {formatSalaryRange(job.salaryMin, job.salaryMax)}
                   </TableCell>
-                  <TableCell className="text-right tabular-nums">{applicationCount}</TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    {applicationCount > 0 ? (
+                      <Link
+                        href={`/dashboard/employer/${job.id}/applications`}
+                        className="underline underline-offset-2"
+                      >
+                        {applicationCount}
+                      </Link>
+                    ) : (
+                      applicationCount
+                    )}
+                  </TableCell>
                   <TableCell>
                     {/* Gated by the same statuses the Server Action enforces in
                         SQL — the UI hiding a button is convenience, not the
