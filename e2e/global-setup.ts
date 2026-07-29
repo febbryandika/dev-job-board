@@ -22,6 +22,16 @@ export default async function globalSetup() {
   const pool = new Pool({ connectionString: process.env.DATABASE_URL })
 
   try {
+    // `jobs.reviewed_by` references `user.id` with no ON DELETE rule — correct
+    // for production, where deleting a reviewer should not silently rewrite an
+    // audit trail. But tests promote their own admins, so those admins end up
+    // as the reviewer on seeded rows and the delete below hits the constraint.
+    // Clearing the reference first is a test-cleanup concern, not a schema flaw.
+    await pool.query(
+      `update jobs set reviewed_by = null
+       where reviewed_by in (select id from "user" where email like '%@example.test')`
+    )
+
     const { rowCount } = await pool.query("delete from \"user\" where email like '%@example.test'")
     if (rowCount) console.log(`[e2e] cleared ${rowCount} leftover test account(s)`)
   } finally {

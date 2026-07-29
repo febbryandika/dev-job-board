@@ -1,27 +1,12 @@
 import { expect, test, type Page } from '@playwright/test'
 
 import { query } from './db'
+import { postJob, register, registerAdmin } from './fixtures'
 
 /**
  * Guards the properties from the phase 9 audit that are cheap to break later.
  * Each of these was measured before it was asserted.
  */
-
-/**
- * Serial for the same reason as the moderation and applications specs: these
- * sign in as the shared seeded accounts, so running them concurrently with
- * each other just adds contention to a suite that already logs in a lot.
- */
-test.describe.configure({ mode: 'serial' })
-
-async function login(page: Page, email: string, landing: string) {
-  await page.goto('/login')
-  await page.getByLabel('Email').fill(email)
-  await page.getByLabel('Password').fill('demo1234')
-  await page.getByRole('button', { name: 'Log in' }).click()
-  await expect(page).toHaveURL(landing)
-  await expect(page.getByRole('button', { name: 'Sign out' })).toBeVisible()
-}
 
 /**
  * Radix renders a hidden native `<select>` alongside its own listbox purely for
@@ -71,7 +56,7 @@ test('no route scrolls horizontally at 375px', async ({ page }) => {
     expect(await overflows(page), `${url} overflows at 375px`).toBe(false)
   }
 
-  await login(page, 'employer@demo.dev', '/dashboard/employer')
+  await register(page, 'employer')
   for (const url of ['/dashboard/employer', '/dashboard/employer/new']) {
     await page.goto(url)
     expect(await overflows(page), `${url} overflows at 375px`).toBe(false)
@@ -84,7 +69,7 @@ test('every visible form control has an accessible name', async ({ page }) => {
     expect(await unlabelledControls(page), `${url} has unlabelled controls`).toEqual([])
   }
 
-  await login(page, 'employer@demo.dev', '/dashboard/employer')
+  await register(page, 'employer')
   await page.goto('/dashboard/employer/new')
   expect(await unlabelledControls(page)).toEqual([])
 })
@@ -94,7 +79,7 @@ test('every visible form control has an accessible name', async ({ page }) => {
  * keyboard user at the top of the document. All three now hand it back.
  */
 test('each dialog traps focus, closes on Escape, and restores focus', async ({ page }) => {
-  await login(page, 'admin@demo.dev', '/dashboard/admin')
+  await registerAdmin(page)
   const reject = page
     .getByRole('list', { name: 'Pending listings' })
     .locator('> li')
@@ -111,7 +96,14 @@ test('each dialog traps focus, closes on Escape, and restores focus', async ({ p
   await page.getByRole('button', { name: 'Sign out' }).click()
   await expect(page).toHaveURL('/')
 
-  await login(page, 'employer@demo.dev', '/dashboard/employer')
+  // The close dialog only exists on an *approved* listing, and a freshly
+  // registered employer has none — approve one directly rather than driving the
+  // whole moderation flow again just to reach a button.
+  await register(page, 'employer')
+  const jobId = await postJob(page, `A11y Close ${Date.now()}`)
+  await query("update jobs set status = 'approved', approved_at = now() where id = $1", [jobId])
+  await page.goto('/dashboard/employer')
+
   const close = page.getByRole('button', { name: 'Close', exact: true }).first()
   await close.click()
   await expect(page.getByRole('dialog')).toBeVisible()
@@ -121,7 +113,11 @@ test('each dialog traps focus, closes on Escape, and restores focus', async ({ p
 })
 
 test('the loading skeleton matches the table it replaces', async ({ page }) => {
-  await login(page, 'employer@demo.dev', '/dashboard/employer')
+  await register(page, 'employer')
+  // A fresh employer has no listings, so the dashboard renders its empty state
+  // and there is no table to compare against.
+  await postJob(page, `A11y Skeleton ${Date.now()}`)
+  await page.goto('/dashboard/employer')
 
   const loaded = await page.evaluate(() =>
     [...document.querySelectorAll('main table thead th')].map((h) => h.textContent!.trim())

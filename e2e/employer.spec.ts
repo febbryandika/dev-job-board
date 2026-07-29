@@ -1,51 +1,10 @@
-import { expect, test, type Page } from '@playwright/test'
+import { expect, test } from '@playwright/test'
 
 import { query } from './db'
-
-
-
-const PASSWORD = 'e2e-password-1234'
-
-function uniqueEmail(prefix: string) {
-  return `${prefix}-${Date.now()}-${Math.round(Math.random() * 1e6)}@example.test`
-}
-
-async function registerEmployer(page: Page) {
-  const email = uniqueEmail('employer')
-
-  await page.goto('/register')
-  await page.getByLabel('Name').fill('E2E Employer')
-  await page.getByLabel('Email').fill(email)
-  await page.getByLabel('Password').fill(PASSWORD)
-  await page.getByRole('radio', { name: "I'm hiring" }).check()
-  await page.getByRole('button', { name: 'Create account' }).click()
-  await expect(page).toHaveURL('/dashboard/employer')
-
-  return email
-}
-
-async function postJob(page: Page, title: string) {
-  await page.goto('/dashboard/employer/new')
-  await page.getByLabel('Job title').fill(title)
-  await page.getByLabel('Company').fill('E2E Test KK')
-  await page.getByLabel('Location', { exact: true }).fill('Shibuya, Tokyo')
-  await page.getByLabel('Location type').selectOption('hybrid')
-  await page.getByLabel('Role type').selectOption('fulltime')
-  await page.getByLabel('Minimum salary (JPY)').fill('7000000')
-  await page.getByLabel('Maximum salary (JPY)').fill('9000000')
-  await page.getByLabel('Tags').fill('TypeScript, React')
-  await page.getByLabel('Description').fill('## About\n\nBuild **great** things with us.')
-  await page.getByRole('button', { name: 'Submit for review' }).click()
-
-  await expect(page).toHaveURL('/dashboard/employer')
-
-  const { rows } = await query<{ id: string }>('select id from jobs where title = $1', [title])
-  expect(rows[0], 'the listing should exist in the database').toBeTruthy()
-  return rows[0]!.id
-}
+import { postJob, register, signOut } from './fixtures'
 
 test('a posted listing starts pending and is not publicly visible', async ({ page }) => {
-  await registerEmployer(page)
+  await register(page, 'employer')
   const title = `E2E Pending ${Date.now()}`
   const id = await postJob(page, title)
 
@@ -69,7 +28,7 @@ test('a posted listing starts pending and is not publicly visible', async ({ pag
 })
 
 test('editing a pending listing keeps it pending', async ({ page }) => {
-  await registerEmployer(page)
+  await register(page, 'employer')
   const title = `E2E Edit ${Date.now()}`
   const id = await postJob(page, title)
 
@@ -87,7 +46,7 @@ test('editing a pending listing keeps it pending', async ({ page }) => {
 })
 
 test('validation errors render next to the field', async ({ page }) => {
-  await registerEmployer(page)
+  await register(page, 'employer')
 
   await page.goto('/dashboard/employer/new')
   await page.getByLabel('Job title').fill('Backwards Salary')
@@ -105,14 +64,13 @@ test('validation errors render next to the field', async ({ page }) => {
 // The ownership check is enforced in SQL, so it has to be tested by driving the
 // URL directly — the UI never offers these buttons for someone else's listing.
 test('another employer cannot reach or edit a listing they do not own', async ({ page }) => {
-  await registerEmployer(page)
+  await register(page, 'employer')
   const title = `E2E Owned ${Date.now()}`
   const id = await postJob(page, title)
 
   // A different employer entirely.
-  await page.getByRole('button', { name: 'Sign out' }).click()
-  await expect(page).toHaveURL('/')
-  await registerEmployer(page)
+  await signOut(page)
+  await register(page, 'employer')
 
   const response = await page.goto(`/dashboard/employer/${id}/edit`)
   expect(response?.status(), "another employer's listing must not be reachable").toBe(404)
@@ -133,13 +91,12 @@ test('another employer cannot reach or edit a listing they do not own', async ({
  * forged — so only the `employerId` predicate inside the UPDATE can stop it.
  */
 test('a forged action payload cannot edit another employer listing', async ({ page }) => {
-  await registerEmployer(page)
+  await register(page, 'employer')
   const victimTitle = `E2E Victim ${Date.now()}`
   const victimId = await postJob(page, victimTitle)
 
-  await page.getByRole('button', { name: 'Sign out' }).click()
-  await expect(page).toHaveURL('/')
-  await registerEmployer(page)
+  await signOut(page)
+  await register(page, 'employer')
   const attackerId = await postJob(page, `E2E Attacker ${Date.now()}`)
 
   let swapped = false
@@ -169,7 +126,7 @@ test('a forged action payload cannot edit another employer listing', async ({ pa
 })
 
 test('an approved listing cannot be edited', async ({ page }) => {
-  await registerEmployer(page)
+  await register(page, 'employer')
   const title = `E2E Approved ${Date.now()}`
   const id = await postJob(page, title)
 
@@ -189,7 +146,7 @@ test('an approved listing cannot be edited', async ({ page }) => {
 test('closing an approved listing removes it from the public site immediately', async ({
   page,
 }) => {
-  await registerEmployer(page)
+  await register(page, 'employer')
   const title = `E2E Close ${Date.now()}`
   const id = await postJob(page, title)
 
